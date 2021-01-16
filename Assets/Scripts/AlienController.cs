@@ -14,11 +14,14 @@ public class AlienController : MonoBehaviour
     private NavMeshAgent agent;
     private Vector3? targetPosition;
     private bool destinationReached;
+    private LineRenderer pathVisualisation;
 
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
-        if(MapManager == null || agent == null)
+        pathVisualisation = GetComponent<LineRenderer>();
+
+        if(MapManager == null || agent == null || pathVisualisation == null)
         {
             print("AlienController wrongly configured.");
             enabled = false;
@@ -27,14 +30,15 @@ public class AlienController : MonoBehaviour
 
     void Update()
     {
-        WatchForPlayer();
+        updatePathVisualisation();
+        watchForPlayer();
 
         if(agent.remainingDistance > 0 && agent.remainingDistance != Mathf.Infinity && agent.remainingDistance <= agent.stoppingDistance && !destinationReached)
         {
             //Debug.Log("destination reached, distance: " + agent.remainingDistance);
             destinationReached = true;
             targetPosition = null;   
-            LookAround();
+            lookAround();
         }   
 
         //Debug.Log(agent.remainingDistance);
@@ -49,7 +53,7 @@ public class AlienController : MonoBehaviour
         }
     }
 
-    void LookAround()
+    void lookAround()
     {
         var startingPosition = CentralPointOfView.position;
         var inFrontPosition = CentralPointOfView.position + transform.forward*5;
@@ -57,7 +61,7 @@ public class AlienController : MonoBehaviour
         RaycastHit hit;
 
         Debug.DrawLine(startingPosition, towardsGround, Color.blue, 10, false);
-
+        
         if(Physics.Raycast(startingPosition, towardsGround, out hit, Mathf.Infinity, GroundLayerMask.value))
         {
             Debug.Log(hit.collider.tag);
@@ -95,7 +99,7 @@ public class AlienController : MonoBehaviour
        return Vector3.Distance(transform.position, MapManager.Player.transform.position);
     }
 
-    void WatchForPlayer()
+    void watchForPlayer()
     {
         var angleToPlayer = GetAngleToPlayer();
         var distanceToPlayer = GetDistanceToPlayer();
@@ -109,6 +113,20 @@ public class AlienController : MonoBehaviour
         {
             Gizmos.color = Color.red;
             Gizmos.DrawSphere(targetPosition.Value, 0.5f);
+        }
+    }
+
+    void updatePathVisualisation()
+    {
+        if(agent.hasPath) 
+        {
+            pathVisualisation.positionCount = agent.path.corners.Length;
+            pathVisualisation.SetPositions(agent.path.corners);
+            pathVisualisation.enabled = true;
+        }
+        else
+        {
+            pathVisualisation.enabled = false;
         }
     }
 }

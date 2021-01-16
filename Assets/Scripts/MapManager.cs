@@ -7,12 +7,13 @@ public class MapManager : MonoBehaviour
     public GameObject Player;
     public GameObject Map;
     public int TilesDensity;
+    public bool VisualiseTilesOn;
+    private Vector3 mapSize;
+    private Vector3 tileSize;
+    private Vector3 mapBottomLeftCornerPosition;
+    private Tile[,] matrixOfTiles;
 
-    private Vector2 mapSize;
-    private Vector2 tileSize;
-    private Vector2 mapBottomLeftCorner;
-
-    void Start()
+    void Awake()
     {
         if(TilesDensity <= 0 || Map == null || Player == null){
             print("Incorrect data in MapManager");
@@ -21,36 +22,37 @@ public class MapManager : MonoBehaviour
         
         var mapRenderer = Map.GetComponent<MeshRenderer>();
         var sizeOfTheMap = mapRenderer.bounds.size;
-        mapSize = new Vector2(sizeOfTheMap.x, sizeOfTheMap.z);
+        mapSize = new Vector3(sizeOfTheMap.x, 0, sizeOfTheMap.z);
         tileSize = mapSize/TilesDensity;
 
         var mapLocation = Map.transform.position;
-        mapBottomLeftCorner = new Vector2(mapLocation.x , mapLocation.z) - mapSize/2;
+        mapBottomLeftCornerPosition = mapLocation - mapSize/2;
 
         // Debug.Log(mapSize);
         // Debug.Log(tileSize);
         // Debug.Log(mapBottomLeftCorner);   
+        initMatrix();
     }
 
     void Update()
-    {        
-        VisualiseTiles();
+    {      
+        if(VisualiseTilesOn) visualiseTiles();
     }
 
-    public Vector2 GetTileWithPlayer(Vector3 playerPosition)
+    public Vector3 GetTileWithPlayer(Vector3 playerPosition)
     {
         for (int x = 0; x < TilesDensity; x++)
         {
-            var tileStartX = x * tileSize.x + mapBottomLeftCorner.x;
+            var tileStartX = x * tileSize.x + mapBottomLeftCornerPosition.x;
 
             if(playerPosition.x >= tileStartX && playerPosition.x < tileStartX + tileSize.x)
             {
-                for (int y = 0; y < TilesDensity; y++)
+                for (int z = 0; z < TilesDensity; z++)
                 {
-                     var tileStartY = y * tileSize.y + mapBottomLeftCorner.y;
-                     if(playerPosition.z >= tileStartY && playerPosition.z < tileStartY + tileSize.y)
+                     var tileStartZ = z * tileSize.z + mapBottomLeftCornerPosition.z;
+                     if(playerPosition.z >= tileStartZ && playerPosition.z < tileStartZ + tileSize.z)
                      {
-                         return new Vector2(x,y);
+                         return new Vector3(x, 0, z);
                      }
                 }
             }
@@ -61,44 +63,44 @@ public class MapManager : MonoBehaviour
     public void DrawPlayerTile()
     {
         var playerTile = GetTileWithPlayer(Player.transform.position);
-        DrawTile(playerTile, Color.red, 2);   
+        matrixOfTiles[(int)playerTile.x, (int)playerTile.z].DrawTile(Color.red, 2);   
     }
 
     public Vector3 GetCenterOfThePlayerTile()
     {
         var playerTile = GetTileWithPlayer(Player.transform.position);
-        return GetCenterOfTheTile(playerTile);
+        return matrixOfTiles[(int)playerTile.x, (int)playerTile.z].PositionCenter;
     }
 
-    private Vector3 GetCenterOfTheTile(Vector2 tile)
+    public Vector3 GetTileSize()
     {
-        var tileStartX = tile.x * tileSize.x + mapBottomLeftCorner.x;
-        var tileStartY = tile.y * tileSize.y + mapBottomLeftCorner.y;
-
-        return new Vector3(tileStartX + tileSize.x/2, 0, tileStartY + tileSize.y/2);
+        return tileSize;
     }
 
-    private void VisualiseTiles()
+    private void visualiseTiles()
     {
         for (int x = 0; x < TilesDensity; x++)
         {
-            for (int y = 0; y < TilesDensity; y++)
+            for (int z = 0; z < TilesDensity; z++)
             {
-                DrawTile(new Vector2(x, y), Color.green);    
+                matrixOfTiles[x,z].DrawTile(Color.green);
             }
         }
     }
 
-    private void DrawTile(Vector2 tileCoordinates, Color lineColor, int time = 0){
-        var initPosition = tileCoordinates * tileSize + mapBottomLeftCorner;
-        var topCorner = initPosition + new Vector2(tileSize.x, 0);
-        var diagonalTileCorner = initPosition + tileSize;
-        var rightCorner = initPosition + new Vector2(0, tileSize.y);
-
-        Debug.DrawLine(initPosition.GetMe3(), topCorner.GetMe3(), lineColor, time, false);
-        Debug.DrawLine(initPosition.GetMe3(), rightCorner.GetMe3(), lineColor, time, false);
-        Debug.DrawLine(topCorner.GetMe3(), diagonalTileCorner.GetMe3(), lineColor, time, false);
-        Debug.DrawLine(rightCorner.GetMe3(), diagonalTileCorner.GetMe3(), lineColor, time, false);
+    private void initMatrix()
+    {
+        matrixOfTiles = new Tile[TilesDensity, TilesDensity];
+        for (int x = 0; x < TilesDensity; x++)
+        {
+            for (int z = 0; z < TilesDensity; z++)
+            {
+                var matrixIndex = new Vector3(x, 0, z);
+                var tilePosition = Vector3.Scale(tileSize, matrixIndex) +  mapBottomLeftCornerPosition;
+                var tile = new Tile(matrixIndex, tilePosition, tileSize);                
+                matrixOfTiles[x,z] = tile;
+            }
+        }
     }
 }
     
