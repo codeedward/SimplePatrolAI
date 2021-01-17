@@ -4,16 +4,26 @@ using UnityEngine;
 
 public class Tile
 {
+    public Vector3 PositionCenter => positionCenter;
+    public Vector3 MatrixIndex => matrixIndex;
+    public float Priority =>  priority;
+    public bool IsWall => isWall;
+    public bool IsGrass => isGrass;
+    public bool CloseToTheWall { get; set; }
+
     private Vector3 matrixIndex;  
     private Vector3 position;  
     private Vector3 size;
 
     private Vector3 positionCenter;
-    private bool isObstacle;
-    private int priority;
+    private bool isWall;
+    private bool isGrass;
+    private float priority;
+    private Vector3 tileTopCorner;
+    private Vector3 tileDiagonalTileCorner;
+    private Vector3 tileRightCorner;
 
-    public Vector3 PositionCenter => positionCenter;
-
+    bool testDebug = true;
     public Tile(Vector3 indexPosition, Vector3 realPosition, Vector3 sizeParam) 
     {
         matrixIndex = indexPosition;
@@ -22,16 +32,98 @@ public class Tile
 
         priority = 0;
         positionCenter = realPosition + sizeParam/2;
+
+        tileTopCorner = position + new Vector3(size.x, 0, 0);
+        tileDiagonalTileCorner = position + size;
+        tileRightCorner = position + new Vector3(0, 0, size.z);
     }
 
-    public void DrawTile(Color lineColor, int time = 0){
-        var topCorner = position + new Vector3(size.x, 0, 0);
-        var diagonalTileCorner = position + size;
-        var rightCorner = position + new Vector3(0, 0, size.z);
+    public void DrawTile(Color lineColor, int time = 0)
+    {
+        Debug.DrawLine(position, tileTopCorner, lineColor, time, false);
+        Debug.DrawLine(position, tileRightCorner, lineColor, time, false);
+        Debug.DrawLine(tileTopCorner, tileDiagonalTileCorner, lineColor, time, false);
+        Debug.DrawLine(tileRightCorner, tileDiagonalTileCorner, lineColor, time, false);
+    }
 
-        Debug.DrawLine(position, topCorner, lineColor, time, false);
-        Debug.DrawLine(position, rightCorner, lineColor, time, false);
-        Debug.DrawLine(topCorner, diagonalTileCorner, lineColor, time, false);
-        Debug.DrawLine(rightCorner, diagonalTileCorner, lineColor, time, false);
+    public void CalculatePriority(TilePriorityCalculationInfo priorityCalculationData)
+    {
+        priority = 1;
+
+        var distanceToPlayer = getDistanceToPlayer(priorityCalculationData.PlayerPosition);
+        priority+=(1-distanceToPlayer/priorityCalculationData.DistanceToKeepFromPlayer) * 0.5f;
+
+        if(distanceToPlayer > priorityCalculationData.DistanceToKeepFromPlayer)
+        {
+            priority++;
+        }
+
+        if(isWallOnTheWayToPlayer(priorityCalculationData.PlayerPosition, priorityCalculationData.LayerMaskWall)){
+            priority += 2;
+        }
+
+        if(isGrass)
+        {
+            priority += 0.5f;
+        }
+        if(CloseToTheWall)
+        {
+            priority += 1; 
+        }
+    }
+
+    public void UpdateTileTypeInfo(LayerMask layerMaskWall, LayerMask layerMaskGrass) 
+    {        
+        isWall = isObjectOnTheTile(layerMaskWall);
+        isGrass = isObjectOnTheTile(layerMaskGrass);
+    }
+
+    private bool isObjectOnTheTile(LayerMask mask)
+    {
+        RaycastHit hit;
+        var hitghPointToCastFromY = 100;
+        return Physics.Raycast(positionCenter.OverrideY(hitghPointToCastFromY), Vector3.down, out hit, Mathf.Infinity, mask) ||
+            Physics.Raycast(tileTopCorner.OverrideY(hitghPointToCastFromY), Vector3.down, out hit, Mathf.Infinity, mask) ||
+            Physics.Raycast(tileRightCorner.OverrideY(hitghPointToCastFromY), Vector3.down, out hit, Mathf.Infinity, mask) ||
+            Physics.Raycast(tileDiagonalTileCorner.OverrideY(hitghPointToCastFromY), Vector3.down, out hit, Mathf.Infinity, mask) ||
+            Physics.Raycast(positionCenter.OverrideY(hitghPointToCastFromY), Vector3.down, out hit, Mathf.Infinity, mask);
+    }
+
+    private float getDistanceToPlayer(Vector3 playerPosition) 
+    {
+        return Vector3.Distance(position, playerPosition);
+    }
+    private bool isWallOnTheWayToPlayer(Vector3 playerPosition, LayerMask layerMaskWall) {
+        var result = false;
+        
+        RaycastHit hit;
+        var directionVector = playerPosition - positionCenter;
+        var distanceToPlayer = getDistanceToPlayer(playerPosition);
+
+        // Does the ray intersect any objects excluding the player layer
+        if (Physics.Raycast(positionCenter, directionVector, out hit, distanceToPlayer, layerMaskWall))
+        {
+            // if(testDebug && matrixIndex.x == 15 && matrixIndex.z == 17)
+            // {
+            //     testDebug = false;
+            //     //Debug.DrawRay(positionCenter, directionVector * hit.distance, Color.yellow, 100);
+            //     //Debug.Log("Did Hit: " + hit.collider.name);
+            // }
+            
+            result = true;
+        }
+        else
+        {
+            // if(testDebug)
+            // {
+            //     testDebug = false;
+            //     Debug.DrawRay(positionCenter, directionVector * 100, Color.white, 100);
+            //     Debug.Log("Did not Hit");
+            // }
+
+            result = false;
+        }
+
+        return result;
     }
 }
