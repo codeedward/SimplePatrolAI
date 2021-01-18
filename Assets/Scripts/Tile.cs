@@ -95,36 +95,10 @@ public class Tile
         return Vector3.Distance(position, playerPosition);
     }
     private bool isWallOnTheWayToPlayer(Vector3 playerPosition, LayerMask layerMaskWall) {
-        var result = false;
-        
         RaycastHit hit;
         var directionVector = playerPosition - positionCenter;
         var distanceToPlayer = getDistanceToPlayer(playerPosition);
 
-        // Does the ray intersect any objects excluding the player layer
-        if (Physics.Raycast(positionCenter, directionVector, out hit, distanceToPlayer, layerMaskWall))
-        {
-            // if(testDebug && matrixIndex.x == 15 && matrixIndex.z == 17)
-            // {
-            //     testDebug = false;
-            //     //Debug.DrawRay(positionCenter, directionVector * hit.distance, Color.yellow, 100);
-            //     //Debug.Log("Did Hit: " + hit.collider.name);
-            // }
-            
-            result = true;
-        }
-        else
-        {
-            // if(testDebug)
-            // {
-            //     testDebug = false;
-            //     Debug.DrawRay(positionCenter, directionVector * 100, Color.white, 100);
-            //     Debug.Log("Did not Hit");
-            // }
-
-            result = false;
-        }
-
-        return result;
+        return Physics.Raycast(positionCenter, directionVector, out hit, distanceToPlayer, layerMaskWall);
     }
 }

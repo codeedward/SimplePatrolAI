@@ -196,7 +196,6 @@ public class MapManager : MonoBehaviour
                 var matrixIndex = new Vector3(x, 0, z);
                 var tilePosition = Vector3.Scale(tileSize, matrixIndex) +  mapBottomLeftCornerPosition;
                 var tile = new Tile(matrixIndex, tilePosition, tileSize);                
-                //tile.UpdateTileTypeInfo(LayerMaskWall, LayerMaskGrass);
                 matrixOfTiles[x,z] = tile;
             }
         }
