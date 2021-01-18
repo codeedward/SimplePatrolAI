@@ -213,6 +213,19 @@ public class MapManager : MonoBehaviour
                 }
             }
         }
+
+        //For debugging only
+        for (int x = 0; x < TilesDensity; x++)
+        {
+            for (int z = 0; z < TilesDensity; z++)
+            {       
+                var currentTile = matrixOfTiles[x,z];                     
+                if(currentTile.CloseToTheWall)
+                {
+                    currentTile.DrawTile(Color.black, 10000);
+                }
+            }
+        }
     }
 
     private void updateNeighboursAboutTheWall(Tile tile)

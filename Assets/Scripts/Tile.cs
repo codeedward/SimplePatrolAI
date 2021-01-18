@@ -51,24 +51,25 @@ public class Tile
         priority = 1;
 
         var distanceToPlayer = getDistanceToPlayer(priorityCalculationData.PlayerPosition);
-        priority+=(1-distanceToPlayer/priorityCalculationData.DistanceToKeepFromPlayer) * 0.5f;
+        priority += (priorityCalculationData.DistanceToKeepFromPlayer/(priorityCalculationData.DistanceToKeepFromPlayer+distanceToPlayer)) * 2;
 
         if(distanceToPlayer > priorityCalculationData.DistanceToKeepFromPlayer)
         {
-            priority++;
+            priority += 1;
         }
 
         if(isWallOnTheWayToPlayer(priorityCalculationData.PlayerPosition, priorityCalculationData.LayerMaskWall)){
-            priority += 2;
+            priority += 3;
         }
 
         if(isGrass)
         {
-            priority += 0.5f;
+            priority += 0.01f;
         }
+
         if(CloseToTheWall)
         {
-            priority += 1; 
+            priority += 5; 
         }
     }
 
